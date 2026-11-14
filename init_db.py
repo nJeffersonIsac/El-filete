@@ -150,11 +150,15 @@ CREATE TABLE factura (
     monto_recibido     REAL NOT NULL DEFAULT 0,
     cambio_devuelto    REAL NOT NULL DEFAULT 0,
     mesero_nombre      TEXT NOT NULL DEFAULT 'Sistema',
+    -- Campo de estado para anulación lógica (no se eliminan registros)
+    estado             TEXT NOT NULL DEFAULT 'Emitida'
+                       CHECK (estado IN ('Emitida', 'Anulada')),
     FOREIGN KEY (id_pedido) REFERENCES pedido(id_pedido)
         ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE INDEX idx_factura_fecha       ON factura(fecha_hora);
+CREATE INDEX idx_factura_estado      ON factura(estado);
 
 CREATE TABLE reserva (
     id_reserva     INTEGER PRIMARY KEY AUTOINCREMENT,
