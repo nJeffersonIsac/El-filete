@@ -138,7 +138,6 @@ el_filete3/
 ├── reservas.html          # Página de gestión de reservas
 ├── reservas.js            # Lógica de reservas (listado, filtros, alta, estados, tiquete)
 │
-├── usuarios.js            # Lógica de usuarios NO enlazada por ningún HTML (código huérfano)
 ├── optimizar-imagenes.py  # Utilidad opcional (Pillow) para comprimir imágenes JPG
 ├── README.md              # Documentación previa (desactualizada, ver §11)
 ├── .vscode/settings.json  # Configuración del editor (gestor de entornos Python: sistema)
@@ -1063,7 +1062,6 @@ sequenceDiagram
 
 | Elemento | Observación |
 |---|---|
-| `usuarios.js` | No lo incluye ningún HTML; usa IDs (`user-modal`, `new-username`, …) que no existen en `Facturacion.html`. Duplica funciones de `app.js` |
 | `srver.zip` | Contiene una versión anterior de `server.py` (≈48 KB, 04/11/2026) |
 | `__pycache__/` | Bytecode de Python 3.10 y 3.15 |
 | `README.md` | Desactualizado (BD `Filete2.db`, `init_db.py`, *fallback*, 10 mesas / 101 productos, endpoints inexistentes, ruta de otro equipo) |
@@ -1173,7 +1171,7 @@ const res = await window.fetchAuth('/api/mesas', {
 | `server.py` | Lectura completa |
 | `auth.py` | Lectura completa |
 | `app.js` | Lectura completa |
-| `login.js`, `reservas.js`, `usuarios.js` | Lectura completa |
+| `login.js`, `reservas.js` | Lectura completa |
 | `Facturacion.html`, `login.html`, `MenuFilete.html`, `unificador.html` | Lectura completa |
 | `reservas.html` | Lectura de estructura, formularios y scripts |
 | `iniciar.bat`, `optimizar-imagenes.py`, `.vscode/settings.json`, `README.md` | Lectura completa |
