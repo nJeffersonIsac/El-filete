@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>POS - El Filete</title>
+    <link rel="stylesheet" href="Facturacion.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        (function initTema() {
+            const guardado = localStorage.getItem('filete-tema') || 'dark';
+            document.documentElement.setAttribute('data-theme', guardado);
+        })();
+    </script>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- ======================== SIDEBAR ======================== -->
+        <nav class="sidebar">
+            <div class="logo-container">
+                <img src="Imagenes/Logo.jpg" alt="Logo El Filete">
+            </div>
+            <ul class="nav-links">
+                <li class="nav-item active" data-tab="pos">
+                    <i class="fa-solid fa-cash-register"></i> <span>Punto de Venta</span>
+                </li>
+                <li class="nav-item" data-tab="ordenes-abiertas" data-rol-requerido="admin,cajero">
+                    <i class="fa-solid fa-clipboard-list"></i> <span>Órdenes Abiertas</span>
+                </li>
+                <li class="nav-item" data-tab="inventory">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> <span>Historial Facturas</span>
+                </li>
+                
+                <!-- BOTÓN DE RESERVAS (Abre la página reservas.html) -->
+                <li class="nav-item" data-rol-requerido="admin,mesero" onclick="window.location.href='reservas.html'">
+                    <i class="fa-solid fa-calendar-check"></i> <span>Reservas</span>
+                </li>
+
+                <li class="nav-item" data-tab="reportes" data-rol-requerido="admin,cajero">
+                    <i class="fa-solid fa-chart-pie"></i> <span>Reportes</span>
+                </li>
+                <li class="nav-item" data-tab="menu-admin" data-rol-requerido="admin">
+                    <i class="fa-solid fa-burger"></i> <span>Editar Menú</span>
+                </li>
+                <li class="nav-item" data-tab="usuarios" data-rol-requerido="admin">
+                    <i class="fa-solid fa-users-gear"></i> <span>Usuarios</span>
+                </li>
+            </ul>
+            <div class="user-info">
+                <div class="avatar"><i class="fa-solid fa-user"></i></div>
+                <div class="user-details">
+                    <span class="user-name" id="sidebar-nombre-usuario">...</span>
+                    <span class="badge" id="sidebar-rol"></span>
+                </div>
+                <button class="btn-tema" onclick="window.toggleTema()" title="Cambiar tema">
+                    <i class="fa-solid fa-moon" id="icono-tema"></i>
+                </button>
+                <button class="btn-tema" onclick="cerrarSesion()" title="Cerrar Sesión" style="border-color: var(--danger); color: var(--danger);">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </nav>
+
+        <!-- ======================== CONTENIDO PRINCIPAL ======================== -->
+        <main class="main-content">
+            
+            <!-- VISTA: POS -->
+            <section id="pos-view" class="view-section active-view">
+                <div class="catalog-section">
+                    <header class="catalog-header">
+                        <h2>Menú</h2>
+                        <div class="search-bar">
+                            <input type="text" id="search-input" placeholder="Buscar productos...">
+                        </div>
+                    </header>
+                    <div class="categories-wrapper">
+                        <div class="categories-container" id="categories-container"></div>
+                    </div>
+                    <div class="products-grid" id="products-grid"></div>
+                </div>
+                
+                <aside class="order-panel">
+                    <div class="order-header">
+                        <h3 id="orden-titulo">Orden Actual</h3>
+                        <button class="btn-clear" id="btn-clear-order">Limpiar</button>
+                    </div>
+                    
+                    <div class="order-config">
+                        <div class="order-config-row">
+                            <label>Mesa:</label>
+                            <select id="order-mesa-select" class="order-select">
+                                <option value="">Para Llevar</option>
+                            </select>
+                        </div>
+                        <div class="order-config-row">
+                            <label>Cliente:</label>
+                            <input type="text" id="order-cliente-input" class="order-input" placeholder="Consumidor Final">
+                        </div>
+                        <div class="order-config-row" id="row-ordenes-abiertas" data-rol-requerido="admin,cajero" style="margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 10px; display: none;">
+                            <label style="color: var(--secondary);"><i class="fa-solid fa-list"></i> Cargar:</label>
+                            <select id="select-ordenes-abiertas" class="order-select" onchange="cargarOrdenAbierta(this.value)">
+                                <option value="">-- Órdenes de meseros --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="orden-abierta-info" style="display:none; background: rgba(16,185,129,0.15); border: 1px solid var(--secondary); border-radius: 8px; padding: 8px 12px; margin: 8px 0; font-size: 0.85rem;">
+                        <i class="fa-solid fa-circle-info"></i> <span id="orden-abierta-texto"></span>
+                        <button onclick="limpiarOrdenCargada()" style="float:right; background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:0.85rem;">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div class="order-items" id="order-items"></div>
+                    
+                    <div class="order-summary">
+                        <div class="summary-row"><span>Subtotal</span><span id="summary-subtotal">C$ 0.00</span></div>
+                        <div class="summary-row"><span>IVA (15%)</span><span id="summary-tax">C$ 0.00</span></div>
+                        <div class="summary-row total"><span>Total</span><span id="summary-total">C$ 0.00</span></div>
+                        
+                        <div class="payment-methods" id="payment-methods-section">
+                            <label class="payment-method selected">
+                                <input type="radio" name="payment" value="Efectivo" checked>
+                                <i class="fa-solid fa-money-bill-wave"></i> Efectivo
+                            </label>
+                            <label class="payment-method">
+                                <input type="radio" name="payment" value="Tarjeta">
+                                <i class="fa-solid fa-credit-card"></i> Tarjeta
+                            </label>
+                            <label class="payment-method">
+                                <input type="radio" name="payment" value="Transferencia">
+                                <i class="fa-solid fa-mobile-screen"></i> Transf.
+                            </label>
+                        </div>
+
+                        <div class="cash-section" id="cash-section">
+                            <div class="summary-row" style="margin-bottom: 0;">
+                                <span style="font-weight: 600; color: var(--text-main);">Efectivo Recibido:</span>
+                                <input type="number" id="monto-recibido" class="order-input" placeholder="0.00" min="0" step="0.01" style="text-align: right; max-width: 120px;">
+                            </div>
+                            <div class="summary-row" style="margin-top: 10px; margin-bottom: 0; color: var(--secondary); font-weight: 700; font-size: 1.1rem;">
+                                <span>Cambio:</span>
+                                <span id="cambio-vuelto">C$ 0.00</span>
+                            </div>
+                        </div>
+
+                        <button class="btn-process" id="btn-process-order" disabled>
+                            Cobrar <span id="btn-total">C$ 0.00</span>
+                        </button>
+                        <button class="btn-process btn-secondary-action" id="btn-actualizar-orden" disabled style="display:none; background: var(--secondary); margin-top: 8px;">
+                            <i class="fa-solid fa-plus"></i> Agregar a Orden #<span id="btn-orden-id">-</span>
+                        </button>
+                    </div>
+                </aside>
+            </section>
+
+            <!-- VISTA: ÓRDENES ABIERTAS -->
+            <section id="ordenes-abiertas-view" class="view-section" style="padding: 2rem; flex-direction: column; overflow-y: auto;">
+                <header class="view-header">
+                    <h2>Órdenes Abiertas</h2>
+                    <button class="btn-primary" onclick="cargarOrdenesAbiertas()"><i class="fa-solid fa-rotate"></i> Actualizar</button>
+                </header>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th><th>Mesa</th><th>Mesero</th><th>Items</th><th>Total</th><th>Fecha</th><th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordenes-abiertas-tbody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- VISTA: HISTORIAL DE FACTURAS -->
+            <section id="inventory-view" class="view-section">
+                <header class="view-header">
+                    <h2>Historial de Facturas</h2>
+                    <button class="btn-primary" onclick="cargarFacturas()">Actualizar</button>
+                </header>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>N°</th><th>Fecha</th><th>Mesa/Tipo</th><th>Cliente</th><th>Atendió</th><th>Método</th><th>Total</th><th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="facturas-table-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- VISTA: REPORTES -->
+            <section id="reportes-view" class="view-section" style="padding: 2rem; flex-direction: column; overflow-y: auto;">
+                <header class="view-header">
+                    <h2><i class="fa-solid fa-chart-pie"></i> Reportes y Backups</h2>
+                </header>
+                
+                <div class="reporte-container">
+                    <div class="reporte-card">
+                        <div class="reporte-card-header">
+                            <i class="fa-solid fa-calendar-day"></i><h3>Reporte Diario</h3>
+                        </div>
+                        <p>Genera el resumen de ventas del día y guarda backup JSON + CSV.</p>
+                        <div class="reporte-actions">
+                            <input type="date" id="reporte-fecha-diario" class="order-input">
+                            <button class="btn-primary" onclick="generarReporte('diario')"><i class="fa-solid fa-eye"></i> Generar</button>
+                        </div>
+                    </div>
+
+                    <div class="reporte-card" id="reporte-semanal-card" data-rol-requerido="admin">
+                        <div class="reporte-card-header">
+                            <i class="fa-solid fa-calendar-week"></i><h3>Reporte Semanal</h3>
+                        </div>
+                        <p>Resumen de la semana desde la fecha indicada. Solo disponible para Admin.</p>
+                        <div class="reporte-actions">
+                            <input type="date" id="reporte-fecha-semanal" class="order-input">
+                            <button class="btn-primary" onclick="generarReporte('semanal')"><i class="fa-solid fa-eye"></i> Generar</button>
+                        </div>
+                    </div>
+
+                    <div class="reporte-card" id="reporte-mensual-card" data-rol-requerido="admin">
+                        <div class="reporte-card-header">
+                            <i class="fa-solid fa-calendar-alt"></i><h3>Reporte Mensual</h3>
+                        </div>
+                        <p>Resumen completo del mes con top de productos y categorías.</p>
+                        <div class="reporte-actions">
+                            <select id="reporte-mes" class="order-select">
+                                <option value="1">Enero</option><option value="2">Febrero</option>
+                                <option value="3">Marzo</option><option value="4">Abril</option>
+                                <option value="5">Mayo</option><option value="6">Junio</option>
+                                <option value="7">Julio</option><option value="8">Agosto</option>
+                                <option value="9">Septiembre</option><option value="10">Octubre</option>
+                                <option value="11">Noviembre</option><option value="12">Diciembre</option>
+                            </select>
+                            <input type="number" id="reporte-anio" class="order-input" value="2026" min="2024" max="2030" style="max-width: 90px;">
+                            <button class="btn-primary" onclick="generarReporte('mensual')"><i class="fa-solid fa-eye"></i> Generar</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="reporte-resultado" style="margin-top: 1rem;"></div>
+            </section>
+
+            <!-- VISTA: MENÚ ADMIN -->
+            <section id="menu-admin-view" class="view-section" style="padding: 2rem; flex-direction: column; overflow-y: auto;">
+                <header class="view-header">
+                    <h2><i class="fa-solid fa-burger"></i> Administración del Menú</h2>
+                    <button class="btn-primary" onclick="abrirModalProducto()"><i class="fa-solid fa-plus"></i> Nuevo Producto</button>
+                </header>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th><th>Nombre</th><th>Precio</th><th>Categoría</th><th>Estado</th><th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-menu-admin"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- VISTA: USUARIOS -->
+            <section id="usuarios-view" class="view-section">
+                <header class="view-header">
+                    <h2>Gestión de Usuarios</h2>
+                    <button class="btn-primary" onclick="abrirModalUsuario()">Crear usuario</button>
+                </header>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Activo</th><th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usuarios-tbody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ======================== MODALES ======================== -->
+    
+    <!-- Modal Comprobante -->
+    <div class="modal-overlay" id="invoice-modal">
+        <div class="modal-content invoice-print-area">
+            <button class="close-modal no-print" id="close-invoice"><i class="fa-solid fa-xmark"></i></button>
+            <div class="invoice-header">
+                <div class="invoice-logo-img">
+                    <img src="Imagenes/Logo.jpg" alt="Logo El Filete" id="invoice-logo" onerror="this.style.display='none'">
+                </div>
+                <h2>Restaurante El Filete</h2>
+                <p style="color:var(--text-muted); font-size:0.85rem;">Del sabor y calidad para usted</p>
+                <hr style="border-color: var(--border-color); margin: 0.5rem 0;">
+                <p>Comprobante N°: <strong><span id="inv-number"></span></strong></p>
+                <p>Fecha: <span id="inv-date"></span> | Hora: <span id="inv-time"></span></p>
+                <p>Cliente: <strong id="inv-cliente"></strong> | <span id="inv-mesa"></span></p>
+                <p>Atendido por: <strong id="inv-mesero"></strong></p>
+            </div>
+            <table class="invoice-table">
+                <thead>
+                    <tr><th>Cant.</th><th>Descripción</th><th>P. Unit</th><th>Total</th></tr>
+                </thead>
+                <tbody id="inv-items"></tbody>
+            </table>
+            <div class="inv-summary">
+                <div class="inv-row"><span>Subtotal:</span><span id="inv-subtotal"></span></div>
+                <div class="inv-row"><span>IVA (15%):</span><span id="inv-tax"></span></div>
+                <div class="inv-row inv-total"><span>TOTAL:</span><span id="inv-total"></span></div>
+                <div class="inv-row" id="inv-cash-row" style="display: none; margin-top: 10px; color: var(--text-muted);">
+                    <span>Efectivo Recibido:</span><span id="inv-recibido"></span>
+                </div>
+                <div class="inv-row" id="inv-change-row" style="display: none; font-weight: bold; color: var(--secondary);">
+                    <span>Cambio:</span><span id="inv-cambio"></span>
+                </div>
+            </div>
+            <p style="text-align:center; color:var(--text-muted); font-size:0.8rem; margin-top:1rem;">¡Gracias por su visita!</p>
+            <div class="modal-actions no-print">
+                <button class="btn-secondary" id="btn-print"><i class="fa-solid fa-print"></i> Imprimir</button>
+                <button class="btn-primary" id="btn-done"><i class="fa-solid fa-check"></i> Finalizar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Producto -->
+    <div class="modal-overlay" id="producto-modal">
+        <div class="modal-content" style="max-width:560px;">
+            <button class="close-modal" onclick="cerrarModalProducto()"><i class="fa-solid fa-xmark"></i></button>
+            <h2 id="producto-modal-titulo">Nuevo Producto</h2>
+            <form id="producto-form" style="display:flex;flex-direction:column;gap:16px;margin-top:1rem;">
+                <div class="form-group"><label>Nombre del Producto *</label><input type="text" id="prod-nombre" class="order-input" required placeholder="Ej: Filete de Res"></div>
+                <div class="form-group"><label>Precio (C$) *</label><input type="number" id="prod-precio" class="order-input" min="0" step="0.01" required placeholder="0.00"></div>
+                <div class="form-group"><label>Categoría *</label><select id="prod-categoria" class="order-select" required></select></div>
+                <div class="form-group"><label>Descripción</label><input type="text" id="prod-descripcion" class="order-input" placeholder="Descripción breve del producto"></div>
+                <div class="form-group"><label>URL de Imagen</label><input type="text" id="prod-imagen" class="order-input" placeholder="Ej: Imagenes/MiProducto.jpg"></div>
+                <div class="form-group" id="prod-disponible-group" style="display:none;"><label><input type="checkbox" id="prod-disponible" checked> Disponible</label></div>
+                <input type="hidden" id="prod-id" value="">
+                <button type="submit" class="btn-primary" id="prod-submit-btn">Guardar Producto</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Usuario -->
+    <div class="modal-overlay" id="usuario-modal">
+        <div class="modal-content" style="max-width:450px;">
+            <button class="close-modal" onclick="cerrarModalUsuario()"><i class="fa-solid fa-xmark"></i></button>
+            <h2>Crear Usuario</h2>
+            <form id="usuario-form" style="display:flex;flex-direction:column;gap:14px;margin-top:1rem;">
+                <div class="form-group"><label>Username *</label><input type="text" id="usr-username" class="order-input" required></div>
+                <div class="form-group"><label>Nombre Completo</label><input type="text" id="usr-nombre" class="order-input"></div>
+                <div class="form-group"><label>Contraseña * (mín. 8 caracteres)</label><input type="password" id="usr-password" class="order-input" required></div>
+                <div class="form-group"><label>Rol *</label><select id="usr-rol" class="order-select"><option value="mesero">Mesero</option><option value="cajero">Cajero</option><option value="admin">Admin</option></select></div>
+                <button type="submit" class="btn-primary">Crear Usuario</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Cobrar Orden -->
+    <div class="modal-overlay" id="cobrar-modal">
+        <div class="modal-content" style="max-width:450px;">
+            <button class="close-modal" onclick="cerrarCobrarModal()"><i class="fa-solid fa-xmark"></i></button>
+            <h2>Cobrar Orden #<span id="cobrar-orden-id"></span></h2>
+            <div id="cobrar-orden-detalle" style="margin:1rem 0; background:var(--glass-bg); padding:1rem; border-radius:8px; font-size:0.9rem;"></div>
+            <form id="cobrar-form" style="display:flex;flex-direction:column;gap:14px;">
+                <div class="form-group"><label>Cliente</label><input type="text" id="cobrar-cliente" class="order-input" placeholder="Consumidor Final"></div>
+                <div class="form-group"><label>Método de Pago</label><select id="cobrar-metodo" class="order-select"><option value="Efectivo">Efectivo</option><option value="Tarjeta">Tarjeta</option><option value="Transferencia">Transferencia</option></select></div>
+                <div class="form-group" id="cobrar-efectivo-group"><label>Monto Recibido (C$)</label><input type="number" id="cobrar-monto" class="order-input" min="0" step="0.01"></div>
+                <button type="submit" class="btn-process">Cobrar Ahora</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- ======================== SCRIPTS ======================== -->
+    <script>
+        window.toggleTema = function() {
+            const actual = document.documentElement.getAttribute('data-theme') || 'dark';
+            const nuevo = actual === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', nuevo);
+            localStorage.setItem('filete-tema', nuevo);
+            
+            const icono = document.getElementById('icono-tema');
+            if (icono) {
+                icono.className = nuevo === 'light' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const temaActual = document.documentElement.getAttribute('data-theme') || 'dark';
+            const icono = document.getElementById('icono-tema');
+            if (icono) {
+                icono.className = temaActual === 'light' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+            }
+        });
+    </script>
+    <script src="login.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

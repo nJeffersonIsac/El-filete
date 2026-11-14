@@ -1,0 +1,173 @@
+:root {
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+    --bg-dark: #0f172a;
+    --bg-card: rgba(30, 41, 59, 0.85);
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --border: rgba(255, 255, 255, 0.1);
+    --danger: #ef4444;
+}
+
+* { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    font-family: 'Inter', sans-serif; 
+}
+
+body {
+    background: var(--bg-dark);
+    color: var(--text-main);
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-image: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 60%);
+}
+
+.login-container {
+    width: 100%;
+    max-width: 420px;
+    padding: 1rem;
+}
+
+.login-card {
+    background: var(--bg-card);
+    padding: 2.5rem;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    text-align: center;
+}
+
+/* CORRECCIÓN DEL LOGO */
+.login-logo img {
+    width: 100%;
+    max-width: 150px; /* Evita que el logo se desborde */
+    height: auto;
+    border-radius: 12px;
+    margin: 0 auto 1.5rem auto;
+    display: block;
+}
+
+.login-title { 
+    font-size: 1.8rem; 
+    margin-bottom: 0.5rem; 
+}
+
+.login-subtitle { 
+    color: var(--text-muted); 
+    margin-bottom: 2rem; 
+    font-size: 0.9rem; 
+}
+
+.form-group { 
+    margin-bottom: 1.2rem; 
+    text-align: left;
+}
+
+.form-group label { 
+    display: block; 
+    font-size: 0.85rem; 
+    color: var(--text-muted); 
+    margin-bottom: 0.5rem; 
+    font-weight: 500;
+}
+
+.form-group label i {
+    margin-right: 5px;
+}
+
+/* CORRECCIÓN DE LOS INPUTS Y EL OJITO */
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+input {
+    width: 100%; 
+    padding: 0.9rem 1rem; 
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.7); 
+    border: 1px solid var(--border);
+    color: white; 
+    outline: none; 
+    transition: 0.2s;
+    font-size: 1rem;
+}
+
+input:focus { 
+    border-color: var(--primary); 
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Estilo para que el input de contraseña deje espacio al ojito */
+#password {
+    padding-right: 40px; 
+}
+
+.toggle-pwd {
+    position: absolute;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0;
+    width: auto; /* Para que no ocupe todo el ancho */
+}
+
+.toggle-pwd:hover {
+    color: var(--text-main);
+}
+
+/* BOTÓN DE LOGIN */
+.btn-login {
+    width: 100%; 
+    padding: 0.9rem; 
+    border-radius: 8px; 
+    border: none;
+    background: var(--primary); 
+    color: white; 
+    font-weight: 600; 
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 1rem; 
+    transition: 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-login:hover { 
+    background: var(--primary-hover); 
+}
+
+.btn-login:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.error-msg { 
+    color: var(--danger); 
+    font-size: 0.85rem; 
+    text-align: center; 
+    margin-top: 1rem; 
+    background: rgba(239, 68, 68, 0.1);
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.login-footer {
+    margin-top: 2rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1.5rem;
+}

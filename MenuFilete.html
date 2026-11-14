@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú Digital - El Filete</title>
+    
+    <!-- Fuentes e Iconos -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Hoja de Estilos Principal -->
+    <link rel="stylesheet" href="menu.css">
+    
+    <!-- Inicialización Temprana del Tema -->
+    <script>
+        (function initTema() {
+            const guardado = localStorage.getItem('filete-tema') || 'dark';
+            document.documentElement.setAttribute('data-theme', guardado);
+        })();
+    </script>
+</head>
+<body>
+
+    <!-- Botón Flotante de Tema -->
+    <button class="btn-tema" id="btn-tema" onclick="window.toggleTema()" title="Cambiar tema">
+        <i class="fa-solid fa-moon" id="icono-tema"></i>
+        <span id="texto-tema">Oscuro</span>
+    </button>
+
+    <div class="contenedor">
+        <!-- Cabecera del Menú -->
+        <header class="cabecera-menu">
+            <!-- Truco de acceso: Doble clic en el logo lleva al login -->
+            <div class="logo-box" title="Menú El Filete" ondblclick="window.location.href='login.html'" style="cursor: pointer;">
+                <img src="Imagenes/Logo.jpg" alt="Logo El Filete">
+            </div>
+            <h1>Menú Digital</h1>
+            <h2 class="subtitulo-menu">Descubre nuestros deliciosos platillos y especialidades</h2>
+        </header>
+
+        <!-- Contenedor Dinámico del Menú -->
+        <div id="menu-contenedor">
+            <div class="loading-state">
+                <i class="fa-solid fa-spinner fa-spin"></i> Cargando menú desde la base de datos...
+            </div>
+        </div>
+    </div>
+
+    <!-- Lógica del Menú y Tema -->
+    <script>
+        const API_BASE = (window.location.protocol === 'file:') ? 'http://localhost:5000' : '';
+
+        // Función para aplicar el tema
+        function aplicarTema(tema) {
+            document.documentElement.setAttribute('data-theme', tema);
+            localStorage.setItem('filete-tema', tema);
+            
+            const icono = document.getElementById('icono-tema');
+            const texto = document.getElementById('texto-tema');
+            
+            if (icono && texto) {
+                if (tema === 'light') {
+                    icono.className = 'fa-solid fa-sun';
+                    texto.textContent = 'Claro';
+                } else {
+                    icono.className = 'fa-solid fa-moon';
+                    texto.textContent = 'Oscuro';
+                }
+            }
+        }
+
+        // Función global para alternar el tema
+        window.toggleTema = function() {
+            const actual = document.documentElement.getAttribute('data-theme') || 'dark';
+            const nuevo = actual === 'dark' ? 'light' : 'dark';
+            aplicarTema(nuevo);
+        };
+
+        // Sincronizar tema con el icono correcto al cargar
+        document.addEventListener('DOMContentLoaded', () => {
+            const temaActual = document.documentElement.getAttribute('data-theme') || 'dark';
+            aplicarTema(temaActual);
+        });
+
+        // Sincronizar tema si cambia en otra pestaña o iframe
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'filete-tema' && e.newValue) {
+                aplicarTema(e.newValue);
+            }
+        });
+
+        // Función para abrir/cerrar las categorías (acordeón)
+        function toggleCategoria(elemento) {
+            const seccion = elemento.closest('.seccion-categoria');
+            seccion.classList.toggle('abierta');
+        }
+
+        // Cargar los productos desde la API
+        async function cargarMenu() {
+            const container = document.getElementById('menu-contenedor');
+            
+            try {
+                const res = await fetch(`${API_BASE}/api/productos`);
+                
+                if (!res.ok) {
+                    throw new Error("Error al consultar productos");
+                }
+                
+                const productos = await res.json();
+                
+                // Agrupar productos por categoría
+                const map = new Map();
+                productos.forEach(p => {
+                    if (!map.has(p.categoria)) {
+                        map.set(p.categoria, []);
+                    }
+                    map.get(p.categoria).push(p);
+                });
+                
+                let html = '';
+                let primera = true;
+                
+                map.forEach((items, categoria) => {
+                    // La primera categoría se muestra abierta por defecto
+                    const claseAbierta = primera ? 'abierta' : '';
+                    primera = false;
+                    
+                    html += `
+                    <section class="seccion-categoria ${claseAbierta}">
+                        <h2 class="titulo-categoria" onclick="toggleCategoria(this)">
+                            <span class="titulo-izq">
+                                <i class="fa-solid fa-utensils"></i> 
+                                ${categoria} 
+                                <span class="badge-contador">${items.length}</span>
+                            </span>
+                            <i class="fa-solid fa-chevron-down chevron"></i>
+                        </h2>
+                        <div class="contenido-categoria">
+                            <div class="cuadricula">
+                                ${items.map(p => `
+                                    <article class="tarjeta-producto">
+                                        <div class="imagen-wrapper">
+                                            ${p.imagen_url 
+                                                ? `<img src="${p.imagen_url}" class="imagen-producto" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\\'fa-solid fa-utensils icono-placeholder\\'>loading="lazy" decoding="async"</i>';">` 
+                                                : '<i class="fa-solid fa-utensils icono-placeholder"></i>'}
+                                        </div>
+                                        <div class="contenido-tarjeta">
+                                            <h3 class="nombre-producto">${p.nombre}</h3>
+                                            <p class="descripcion-producto">${p.descripcion || ''}</p>
+                                            <span class="precio">C$ ${p.precio.toFixed(2)}</span>
+                                        </div>
+                                    </article>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </section>
+                    `;
+                });
+                
+                container.innerHTML = html;
+                
+            } catch (err) {
+                console.error("Error cargando menú:", err);
+                container.innerHTML = `
+                    <div class="loading-state" style="color:#ef4444;">
+                        <i class="fa-solid fa-triangle-exclamation"></i><br>
+                        Error al cargar el menú. Verifica la conexión con el servidor.
+                    </div>
+                `;
+            }
+        }
+
+        // Iniciar la carga del menú
+        document.addEventListener('DOMContentLoaded', cargarMenu);
+    </script>
+</body>
+</html>
